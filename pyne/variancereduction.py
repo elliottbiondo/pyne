@@ -227,3 +227,56 @@ def magic(meshtally, tag_name, tag_name_error, **kwargs):
     # Create wwinp mesh
     wwinp = Wwinp()
     wwinp.read_mesh(meshtally.mesh)
+
+def auto_cadis_step1(geom, mesh, cells, response_function, **kwargs):
+    """
+    geom : str
+    mesh : PyNE Mesh
+    cells : list or str
+    response_function : array
+    pn : int
+    isct : int
+    """
+
+    ngroup = len(response_function)
+    sourcf = isotropic_vol_source(geom, mesh, cells, spectra, intensities)
+    write_partisn_input(mesh, hdf5, ngroup, pn)
+
+def auto_cadis_step2(atflux, q_mesh, particle, upper_bounds, data_lib):
+    """
+    aflux: str
+    foward_source : PyNE Mesh
+    particle : str
+    upper_bounds : list
+    q_tag : str, optional, default=source_desnity
+    q_bias_tag : str, optional, default=source_desnity
+    """
+   
+    q_bias_tag= "biased_source_density"
+    q_bias_tag= "source_density"
+
+    adj_flux_tag = "adj_flux"
+    q_tag = foward_source_tag
+    ww_tag = "ww_p"
+
+    at = Atflux("atflux")
+    at.to_mesh(foward_source, adj_flux_tag)
+
+    adj_flux_mesh = q_bias_mesh = ww_mesh = q_mesh
+
+    cadis(adj_flux_mesh, adj_flux_tag, q_mesh, q_tag,
+          ww_mesh, ww_tag, q_bias_mesh, q_bias_tag, beta=5)
+
+    tag_e_bounds = \
+        ww_mesh.mesh.createTag('{0}_e_upper_bounds'.format(particle),
+                                len(upper_bounds), float)
+
+	tag_e_bounds[ww_mesh.mesh.rootSet] = upper_bounds
+    wwinp = Wwinp()
+    wwinp.read_mesh(ww_mesh.mesh)
+
+    wwinp.mesh.save("wwinp.h5m")
+    q_mesh.mesh.save("biased_source.h5m")
+    wwinp.write_wwinp("wwinp.out")
+
+
