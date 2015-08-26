@@ -1050,3 +1050,16 @@ class _MeshRow():
                 vol = next_vol
     
         return row_sums
+
+def dominate_material():
+    m.dom_mat = IMeshTag(1, int)
+    for i in range(len(m)):
+        max_frac = 0
+        dom_mat = 1000
+        for row in cell_fracs[cell_fracs['idx'] == i]:
+           if row['vol_frac'] > max_frac:
+              max_frac = row['vol_frac']
+              dom_mat = cell_mats[row['cell']].metadata["mat_number"]
+        dom_mat_list.append(dom_mat)
+    
+    m.dom_mat[:] = dom_mat_list
